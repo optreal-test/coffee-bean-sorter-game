@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Making Coffee Bean Sorter $GRIND</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            margin: 0;
+            font-family: 'Roboto Mono', monospace;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        #container {
+            width: 900px;
+            margin: 20px auto;
+        }
+        #header {
+            text-align: center;
+            padding: 20px;
+        }
+        #header h1 {
+            font-size: 3em;
+            color: #0ff;
+            text-shadow: 0 0 15px #0ff;
+            margin: 0;
+        }
+        #game-section {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            margin-bottom: 40px;
+            position: relative;
+        }
+        canvas {
+            border: 2px solid #0ff;
+            border-radius: 10px;
+            background: #000;
+            display: block;
+            margin: 0 auto;
+        }
+        #ui {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        #score {
+            font-size: 2.5em;
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+            transition: color 0.3s ease;
+        }
+        #timer {
+            font-size: 3em;
+            color: #ff0;
+            text-shadow: 0 0 15px #ff0;
+            background: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            transition: transform 0.5s ease-in-out;
+        }
+        #timer.pulse {
+            animation: pulse 1s infinite ease-in-out;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        #instructions {
+            font-size: 1.2em;
+            color: #e0e0e0;
+            margin-bottom: 15px;
+            text-align: left;
+            max-width: 800px;
+        }
+        #game-controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+        button {
+            background: #0ff;
+            border: none;
+            padding: 12px 24px;
+            color: #000;
+            font-size: 1.2em;
+            font-family: 'Roboto Mono', monospace;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 10px;
+        }
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #0ff;
+        }
+        #game-over {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 15px;
+            color: #e0e0e0;
+            text-align: center;
+            padding: 40px;
+            box-sizing: border-box;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #game-over h2 {
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        #game-over p {
+            font-size: 1.3em;
+            line-height: 1.6;
+            max-width: 600px;
+        }
+        #leaderboard {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            margin-bottom: 40px;
+        }
+        #leaderboard h2 {
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+            font-size: 2em;
+            margin-top: 0;
+        }
+        #leaderboard table {
+            width: 100%;
+            border-collapse: collapse;
+            color: #e0e0e0;
+        }
+        #leaderboard th, #leaderboard td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #0ff;
+        }
+        #leaderboard th {
+            font-size: 1.2em;
+            color: #0ff;
+        }
+        #leaderboard td {
+            font-size: 1.1em;
+        }
+        #education {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            transition: max-height 0.3s ease, padding 0.3s ease;
+            overflow: hidden;
+        }
+        #education.collapsed {
+            max-height: 60px;
+            padding: 10px 30px;
+        }
+        #education h2 {
+            color: #0ff;
+            font-size: 2em;
+            text-shadow: 0 0 10px #0ff;
+            margin-top: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        #education h2 span {
+            margin-right: 10px;
+            font-size: 1.5em;
+            color: #0ff;
+        }
+        #education h3 {
+            color: #0ff;
+            font-size: 1.5em;
+        }
+        #education p, #education li {
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        #education-content {
+            display: block;
+        }
+        #education.collapsed #education-content {
+            display: none;
+        }
+        @media (max-width: 900px) {
+            #container { width: 100%; box-sizing: border-box; padding: 0 10px; }
+            canvas { width: 100%; height: auto; }
+            #header h1 { font-size: 2.5em; }
+            #score, #timer { font-size: 2em; }
+            #instructions, #game-over p, #leaderboard td, #education p { font-size: 1em; }
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="header">
+            <h1>Making Coffee Bean Sorter $GRIND</h1>
+        </div>
+        <div id="game-section">
+            <div id="instructions">
+                <strong>Belt Mode Instructions:</strong><br>
+                Sort coffee beans like a pro! Drag <span style="color: #f00;">red beans</span> (bad ones) to the bottom trough. Let <span style="color: #0f0;">green beans</span> reach the right edge for +10 points. You lose 10 points if a green bean goes to the trough. You lose 50 points if a red bean reaches the right edge. Accuracy drops if you miss red beans or remove green beans by mistake.
+            </div>
+            <div id="ui">
+                <div id="score">Score: 0</div>
+                <div id="timer">60</div>
+            </div>
+            <canvas id="gameCanvas" width="800" height="400"></canvas>
+            <div id="game-controls">
+                <button id="startButton">Start Game</button>
+            </div>
+            <div id="game-over">
+                <h2>Game Over</h2>
+                <p id="final-stats"></p>
+                <button id="restartButton">Restart</button>
+            </div>
+        </div>
+        <div id="leaderboard">
+            <h2>Leaderboard</h2>
+            <table id="leaderboard-table">
+                <tr>
+                    <th>Rank</th>
+                    <th>Name</th>
+                    <th>Score</th>
+                    <th>Accuracy</th>
+                </tr>
+            </table>
+        </div>
+        <div id="education">
+            <h2 onclick="toggleEducation()"><span id="toggle-symbol">+</span> Making Coffee Knowledge $GRIND</h2>
+            <div id="education-content">
+                <h3>History of Hand Sorting</h3>
+                <p>Hand sorting coffee beans traces its roots to the 15th century in Ethiopia and Yemen, where coffee cultivation began. Families and communities gathered to inspect beans, a practice that spread globally as coffee became a prized commodity by the 17th century. In countries like Colombia, Brazil, and Rwanda, sorting was a communal ritual, often led by women whose keen eyes preserved quality. By the 1800s, large estates relied on hand sorting, but the work was grueling—10-hour days for meager pay. Even today, premium coffee estates employ hand sorters to ensure only flawless beans make the cut, blending tradition with modern quality demands.</p>
+                <h3>Fun Facts About Hand Sorting</h3>
+                <ul>
+                    <li>A skilled sorter handles 5-7kg per hour (~40,000-56,000 beans), spotting defects like mold, stones, or overripe beans that could ruin a batch’s flavor.</li>
+                    <li>In Ethiopia, sorters often chant or sing to keep pace, turning repetitive work into a cultural expression.</li>
+                    <li>Defects are tiny—black spots or cracked beans smaller than 1mm—yet sorters catch them in seconds after months of training.</li>
+                    <li>Hand sorting remains vital for “specialty” coffee, where one bad bean in 100 can downgrade a premium lot.</li>
+                    <li>Sorters develop “muscle memory” for quality, often outperforming early machines in nuance detection.</li>
+                </ul>
+                <h3>Optical Sorting Technology</h3>
+                <p>Optical sorting kicked off in the 1930s with crude color detectors but transformed by the 2000s with cutting-edge tech. Today’s systems wield high-resolution cameras, near-infrared sensors, lasers, and AI trained on millions of bean images. Machines process 10 tons per hour—over 100,000 beans per second—scanning for color, size, shape, and density. Air jets, precise to 1mm, eject defects in 0.01 seconds. Compared to hand sorting’s 11 beans per second, optical sorters cut costs and boost output, enabling global brands to maintain quality at scale while freeing workers from repetitive tasks.</p>
+                <h3>Belt Sorters</h3>
+                <p>Belt sorters ferry beans across a conveyor at speeds up to 2 meters per second, passing under sensor arrays that capture 40,000 pixels per bean. Advanced models use hyperspectral imaging to detect invisible flaws like internal rot. Defects are removed by air jets or mechanical flaps, reacting in 10 milliseconds—faster than a blink. Belt sorters excel with specialty coffee, matching hand sorting’s precision at 100x the speed. Their throughput—up to 15 tons per hour—has slashed sorting time from days to minutes, revolutionizing farms and factories worldwide.</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const timerDisplay = document.getElementById('timer');
+        const startButton = document.getElementById('startButton');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalStats = document.getElementById('final-stats');
+        const restartButton = document.getElementById('restartButton');
+        const educationSection = document.getElementById('education');
+        const toggleSymbol = document.getElementById('toggle-symbol');
+        const leaderboardTable = document.getElementById('leaderboard-table');
+        let beans = [];
+        let score = 0;
+        let timeLeft = 60;
+        let draggedBean = null;
+        let isGameRunning = false;
+        let goodBeansPassed = 0;
+        let badBeansMissed = 0;
+        let badBeansRemoved = 0;
+        let goodBeansRemoved = 0;
+        let totalGoodBeansSpawned = 0;
+        let timerStarted = false;
+        let timerInterval = null;
+        let beltOffset = 0;
+        const rejectTroughY = 300;
+        const targetGoodBeans = 660;
+        const lanes = [40, 80, 120, 160, 200, 240]; // 6 lanes, above y=300
+
+        class Bean {
+            constructor(y, type) {
+                this.x = 0;
+                this.y = y;
+                this.type = type;
+                this.baseSpeed = 1.5; // ~90px/s at 60fps, restored
+                this.wobble = Math.random() < 0.5 ? Math.random() * 0.05 : 0; // 50% chance, max 0.05 rad
+                this.wobblePhase = Math.random() * Math.PI * 2;
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x + 15, this.y + 15); // Center of bean (30x30)
+                if (this === draggedBean) {
+                    ctx.scale(1.1, 1.1);
+                    ctx.shadowColor = '#0ff';
+                    ctx.shadowBlur = 10;
+                }
+                const wobbleAngle = this.wobble * Math.sin(this.wobblePhase);
+                ctx.rotate(wobbleAngle);
+                ctx.fillStyle = this.type === 'good' ? '#0f0' : '#f00';
+                ctx.fillRect(-15, -15, 30, 30); // Centered at (0,0) after translation
+                ctx.restore();
+                this.wobblePhase += 0.05; // Subtle wobble speed
+            }
+            move() {
+                this.x += this.baseSpeed;
+                if (this !== draggedBean && this.y > rejectTroughY) {
+                    this.y = rejectTroughY;
+                }
+            }
+        }
+
+        function spawnBean() {
+            if (isGameRunning && goodBeansPassed < targetGoodBeans) {
+                const y = lanes[Math.floor(Math.random() * lanes.length)];
+                beans.push(new Bean(y, 'good'));
+                totalGoodBeansSpawned++;
+                // 5-25% chance for bad bean
+                if (Math.random() < (0.05 + Math.random() * 0.20)) {
+                    const badY = lanes[Math.floor(Math.random() * lanes.length)];
+                    beans.push(new Bean(badY, 'bad'));
+                }
+                setTimeout(spawnBean, 88 + Math.random() * 4); // 88-92ms
+            }
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (!isGameRunning) return;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            for (let i = beans.length - 1; i >= 0; i--) {
+                const bean = beans[i];
+                if (mouseX >= bean.x - 5 && mouseX <= bean.x + 35 && mouseY >= bean.y - 5 && mouseY <= bean.y + 35) {
+                    draggedBean = bean;
+                    break;
+                }
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (draggedBean) {
+                const rect = canvas.getBoundingClientRect();
+                draggedBean.x = e.clientX - rect.left - 15;
+                draggedBean.y = e.clientY - rect.top - 15;
+            }
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            if (draggedBean) {
+                if (draggedBean.y > rejectTroughY) {
+                    if (draggedBean.type === 'bad') {
+                        badBeansRemoved++;
+                    } else {
+                        goodBeansRemoved++;
+                        score -= 10;
+                        scoreDisplay.style.color = '#0f0';
+                        setTimeout(() => { scoreDisplay.style.color = '#0ff'; }, 300);
+                    }
+                    beans = beans.filter(b => b !== draggedBean);
+                    scoreDisplay.textContent = `Score: ${score}`;
+                }
+                draggedBean = null;
+            }
+        });
+
+        function updateLeaderboard(score, accuracy) {
+            const name = prompt('Enter your name for the leaderboard:', 'Player');
+            if (!name) return;
+            let leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
+            leaderboard.push({ name, score, accuracy });
+            leaderboard.sort((a, b) => b.score - a.score || b.accuracy - a.accuracy);
+            leaderboard = leaderboard.slice(0, 5);
+            localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
+            displayLeaderboard();
+        }
+
+        function displayLeaderboard() {
+            const leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
+            while (leaderboardTable.rows.length > 1) {
+                leaderboardTable.deleteRow(1);
+            }
+            leaderboard.forEach((entry, index) => {
+                const row = leaderboardTable.insertRow();
+                row.insertCell().textContent = index + 1;
+                row.insertCell().textContent = entry.name;
+                row.insertCell().textContent = entry.score;
+                row.insertCell().textContent = `${entry.accuracy}%`;
+            });
+        }
+
+        function gameLoop() {
+            if (!isGameRunning) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Conveyor texture
+            ctx.fillStyle = '#222';
+            ctx.fillRect(0, 0, canvas.width, rejectTroughY);
+            ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
+            ctx.lineWidth = 1;
+            for (let i = -canvas.width; i < canvas.width * 2; i += 20) {
+                ctx.beginPath();
+                ctx.moveTo(i + beltOffset, 0);
+                ctx.lineTo(i + beltOffset - 20, rejectTroughY);
+                ctx.stroke();
+            }
+            beltOffset = (beltOffset + 1.5) % 40; // Match belt speed (1.5px/frame)
+            // Trough
+            ctx.fillStyle = '#555';
+            ctx.fillRect(0, rejectTroughY, canvas.width, canvas.height - rejectTroughY);
+            // Belt line
+            ctx.strokeStyle = '#0ff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, rejectTroughY);
+            ctx.lineTo(canvas.width, rejectTroughY);
+            ctx.stroke();
+            beans.forEach((bean, index) => {
+                bean.move();
+                bean.draw();
+                if (bean.x > canvas.width) {
+                    if (bean.type === 'good') {
+                        goodBeansPassed++;
+                        score += 10;
+                        if (!timerStarted) {
+                            timerStarted = true;
+                            startTimer();
+                        }
+                    } else {
+                        badBeansMissed++;
+                        score -= 50;
+                        scoreDisplay.style.color = '#f00';
+                        setTimeout(() => { scoreDisplay.style.color = '#0ff'; }, 300);
+                    }
+                    beans.splice(index, 1);
+                    scoreDisplay.textContent = `Score: ${score}`;
+                }
+            });
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+                if (timeLeft <= 10 && !timerDisplay.classList.contains('pulse')) {
+                    timerDisplay.classList.add('pulse');
+                }
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    isGameRunning = false;
+                    timerDisplay.classList.remove('pulse');
+                    const totalErrors = badBeansMissed + goodBeansRemoved;
+                    const totalHandled = badBeansMissed + badBeansRemoved + goodBeansRemoved;
+                    const accuracy = totalHandled > 0 ? (100 - (totalErrors / totalHandled * 100)).toFixed(1) : 100;
+                    finalStats.innerHTML = `Final Score: ${score}<br>` +
+                                          `Accuracy: ${accuracy}%<br>` +
+                                          `Total good beans sorted: ${goodBeansPassed}<br>` +
+                                          `Total bad beans removed: ${badBeansRemoved}`;
+                    updateLeaderboard(score, accuracy);
+                    gameOverScreen.style.display = 'flex';
+                    startButton.style.display = 'inline-block';
+                }
+            }, 1000);
+        }
+
+        function toggleEducation() {
+            educationSection.classList.toggle('collapsed');
+            toggleSymbol.textContent = educationSection.classList.contains('collapsed') ? '+' : '-';
+        }
+
+        function startGame() {
+            if (isGameRunning) return;
+            isGameRunning = true;
+            startButton.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            score = 0;
+            timeLeft = 60;
+            beans = [];
+            goodBeansPassed = 0;
+            badBeansMissed = 0;
+            badBeansRemoved = 0;
+            goodBeansRemoved = 0;
+            totalGoodBeansSpawned = 0;
+            timerStarted = false;
+            if (timerInterval) clearInterval(timerInterval);
+            scoreDisplay.textContent = `Score: ${score}`;
+            scoreDisplay.style.color = '#0ff';
+            timerDisplay.textContent = timeLeft;
+            timerDisplay.classList.remove('pulse');
+            beltOffset = 0;
+            spawnBean();
+            setInterval(gameLoop, 1000 / 60);
+        }
+
+        // Initialize leaderboard
+        displayLeaderboard();
+
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', startGame);
+    </script>
+</body>
+</html>
